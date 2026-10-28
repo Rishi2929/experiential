@@ -130,13 +130,15 @@ class JsonArchive:
                         continue
                     database.execute("SAVEPOINT json_line")
                     duplicate_keys = self.duplicate_keys
+                    line_data = _strip_utf8_bom(line) if line_number == 1 else line
+
                     try:
-                        self._parse(io.BytesIO(_strip_utf8_bom(line)))
+                        self._parse(io.BytesIO(line_data))
                     except ijson.JSONError:
                         database.execute("ROLLBACK TO json_line")
                         self.duplicate_keys = duplicate_keys
                         try:
-                            json.loads(_strip_utf8_bom(line))
+                            json.loads(line_data)
                         except json.JSONDecodeError as exc:
                             message = exc.msg
                         else:
